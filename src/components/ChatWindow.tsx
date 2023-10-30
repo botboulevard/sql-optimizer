@@ -1,24 +1,24 @@
+import { useChat } from 'ai/react';
+import { ReactElement, useContext, useEffect, useRef } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useChat } from 'ai/react';
-import { useRef, useState, useEffect, ReactElement, useContext } from 'react';
-import type { FormEvent } from 'react';
+// import type { FormEvent } from 'react';
 
+import { Message } from 'ai';
+import { v4 as uuidv4 } from 'uuid';
+import { socket } from '../App';
 import { ChatMessageBubble } from './ChatMessageBubble';
 import { UploadDocumentsForm } from './UploadDocumentsForm';
-import { Message } from 'ai';
-import { socket } from '../App';
 import UserDataContext from './UserDataContext';
-import { v4 as uuidv4 } from 'uuid';
 
 import {
   Box,
-  Text,
-  UnorderedList,
-  ListItem,
-  Input,
   Button,
   CircularProgress,
+  Input,
+  ListItem,
+  Text,
+  UnorderedList,
 } from "@chakra-ui/react";
 
 export function ChatWindow(props: {
@@ -42,7 +42,7 @@ export function ChatWindow(props: {
   const setChatId = useContext(UserDataContext)?.setChatId;
   const setMessages = useContext(UserDataContext)?.setConversation;
 
-  const [chatEndpointIsLoading, setChatEndpointIsLoading] = useState(false);
+  // const [chatEndpointIsLoading, _setChatEndpointIsLoading] = useState(false);
 
   const clearConversation = () => {
     console.log('clearing conversation');
@@ -72,7 +72,7 @@ export function ChatWindow(props: {
   //   </div>
   // );
 
-  const { input, setInput, handleInputChange } = useChat({
+  const { input, handleInputChange } = useChat({
     api: endpoint,
     id: chatID || undefined,
     headers: {
@@ -86,56 +86,56 @@ export function ChatWindow(props: {
     },
   });
 
-  async function sendMessage(e: FormEvent<HTMLFormElement>, prevConversation: Message[]) {
-    if (conversation === undefined || setConversation === undefined) return;
-    e.preventDefault();
-    if (messageContainerRef.current) {
-      messageContainerRef.current.classList.add('grow');
-    }
-    if (!conversation.length) {
-      await new Promise(resolve => setTimeout(resolve, 300));
-    }
-    if (chatEndpointIsLoading) {
-      return;
-    }
-    setChatEndpointIsLoading(true);
-    setConversation(prevConversation => [
-      ...prevConversation,
-      {
-        id: prevConversation.length.toString(),
-        content: input,
-        role: 'user',
-      },
-    ]);
-    setInput('');
-    try {
-      await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messages: [
-            ...prevConversation,
-            {
-              id: prevConversation.length.toString(),
-              content: input,
-              role: 'user',
-            },
-          ],
-          chatId: chatID,
-          socketId: socket.id,
-        }),
-      });
-      setChatEndpointIsLoading(false);
-    } catch (error) {
-      toast('Error from Server try again', {
-        theme: 'dark',
-      });
-      console.error(error);
-      setChatEndpointIsLoading(false);
-    }
-  }
+  // async function sendMessage(e: FormEvent<HTMLFormElement>, prevConversation: Message[]) {
+  //   if (conversation === undefined || setConversation === undefined) return;
+  //   e.preventDefault();
+  //   if (messageContainerRef.current) {
+  //     messageContainerRef.current.classList.add('grow');
+  //   }
+  //   if (!conversation.length) {
+  //     await new Promise(resolve => setTimeout(resolve, 300));
+  //   }
+  //   if (chatEndpointIsLoading) {
+  //     return;
+  //   }
+  //   setChatEndpointIsLoading(true);
+  //   setConversation(prevConversation => [
+  //     ...prevConversation,
+  //     {
+  //       id: prevConversation.length.toString(),
+  //       content: input,
+  //       role: 'user',
+  //     },
+  //   ]);
+  //   setInput('');
+  //   try {
+  //     await fetch(endpoint, {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({
+  //         messages: [
+  //           ...prevConversation,
+  //           {
+  //             id: prevConversation.length.toString(),
+  //             content: input,
+  //             role: 'user',
+  //           },
+  //         ],
+  //         chatId: chatID,
+  //         socketId: socket.id,
+  //       }),
+  //     });
+  //     setChatEndpointIsLoading(false);
+  //   } catch (error) {
+  //     toast('Error from Server try again', {
+  //       theme: 'dark',
+  //     });
+  //     console.error(error);
+  //     setChatEndpointIsLoading(false);
+  //   }
+  // }
 
   useEffect(() => {
     socket.on('llmResChunk', (data: { chatID: string; content: string }) => {
@@ -313,7 +313,7 @@ export function ChatWindow(props: {
             <Text
               role="status"
               sx={{
-                display: chatEndpointIsLoading ? "flex" : "none",
+                // display: chatEndpointIsLoading ? "flex" : "none",
                 justifyContent: "center",
               }}
             >
@@ -325,7 +325,7 @@ export function ChatWindow(props: {
               />
               <Text sx={{ srOnly: true }}>Loading...</Text>
             </Text>
-            <Text sx={{ display: chatEndpointIsLoading ? "none" : "block" }}>Send</Text>
+            {/* <Text sx={{ display: chatEndpointIsLoading ? "none" : "block" }}>Send</Text> */}
           </Button>
         </Box>
       </Box>

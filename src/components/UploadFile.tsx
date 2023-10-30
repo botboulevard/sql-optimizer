@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Container, Box, Text, Button, List, useTheme } from "@chakra-ui/react";
+import { Container, Box, Text, Button, List } from "@chakra-ui/react";
 function UploadFile(props: { onFileUpload: (files: File[]) => void }): React.ReactElement {
   const { onFileUpload } = props;
   const [files, setFiles] = React.useState<File[]>([]);

@@ -1,20 +1,14 @@
-import * as React from "react"
 import {
-  ChakraProvider,
   Box,
-  Text,
-  Link,
-  VStack,
-  Code,
+  ChakraProvider,
   Grid,
-  theme,
-} from "@chakra-ui/react"
-import { ColorModeSwitcher } from "./ColorModeSwitcher"
-import { Logo } from "./Logo"
-import { io } from 'socket.io-client';
-import { ChatWindow } from "./components/ChatWindow";
-import ChatPage from "./components/ChatPage";
+  VStack,
+  theme
+} from "@chakra-ui/react";
 import { useEffect } from "react";
+import { io } from 'socket.io-client';
+import { ColorModeSwitcher } from "./ColorModeSwitcher";
+import ChatPage from "./components/ChatPage";
 
 const socketUrl = `${window.location.protocol}//${window.location.hostname}/`;
 
