@@ -1,26 +1,100 @@
-# Use the latest 2.1 version of CircleCI pipeline process engine.
-# See: https://circleci.com/docs/configuration-reference
 version: 2.1
 
-# Define a job to be invoked later in a workflow.
-# See: https://circleci.com/docs/configuration-reference/#jobs
-jobs:
-  say-hello:
-    # Specify the execution environment. You can specify an image from Docker Hub or use one of our convenience images from CircleCI's Developer Hub.
-    # See: https://circleci.com/docs/configuration-reference/#executor-job
+orbs:
+  aws-cli: circleci/aws-cli@4.1.1
+  aws-s3: circleci/aws-s3@4.0
+  docker: circleci/docker@2.4.0
+
+executors:
+  docker-publisher:
+    environment:
+      IMAGE_NAME: vishals9711/llm_tools_frontend
     docker:
-      - image: cimg/base:stable
-    # Add steps to the job
-    # See: https://circleci.com/docs/configuration-reference/#steps
+      - image: circleci/node:latest
+        auth:
+          username: $DOCKER_USER
+          password: $DOCKER_PASSWORD
+
+jobs:
+  publish_to_docker:
+    executor: docker-publisher
+    resource_class: medium
+    steps:
+      - checkout
+      - setup_remote_docker
+      - restore_cache:
+          keys:
+            - docker-image-layers-{{ .Branch }}-{{ checksum "package.json" }}
+      - run:
+          name: Publish Docker Image to Docker Hub
+          command: |
+            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USER" --password-stdin
+            docker build --build-arg PORT=3000 --build-arg REACT_APP_NOT_SECRET_CODE=$REACT_APP_NOT_SECRET_CODE -t $IMAGE_NAME:latest .
+            docker push $IMAGE_NAME:latest
+      - save_cache:
+          key: docker-image-layers-{{ .Branch }}-{{ checksum "package.json" }}
+          paths:
+            - /root/.npm
+
+  s3_copy_job:
+    docker:
+      - image: cimg/base:current
+    environment:
+      AWS_DEFAULT_REGION: $AWS_REGION
+      AWS_ACCESS_KEY_ID: $CIRCLE_AWS_KEY
+      AWS_SECRET_ACCESS_KEY: $CIRCLE_AWS_SECRET
+    steps:
+      - checkout
+      - aws-cli/setup:
+          aws_access_key_id: $CIRCLE_AWS_KEY
+          aws_secret_access_key: $CIRCLE_AWS_SECRET
+          region: $AWS_REGION
+      - aws-s3/copy:
+          from: docker-compose.yml
+          to: s3://botboulevard/docker-compose.yml
+
+  deploy:
+    machine:
+      image: ubuntu-2004:202010-01
+    resource_class: medium
     steps:
       - checkout
       - run:
-          name: "Say hello"
-          command: "echo Hello, World!"
+          name: Deploy Over SSH
+          command: |
+            echo "$RESUME_PEM" | base64 -d -i > "resume.pem"
+            chmod 400 resume.pem
+            sed -i.bak "s/#OPENAI_PLACEHOLDER/$OPEN_API_KEY/g" docker-compose.yml
+            echo "Copying docker-compose.yml to EC2 instance"
+            rsync -e "ssh -i resume.pem -o StrictHostKeyChecking=no" -av docker-compose.yml ubuntu@$AWS_EC_IP:~/docker-compose.yml
+            ssh -i resume.pem -o "StrictHostKeyChecking no" ubuntu@$AWS_EC_IP \
+              "export OPENAI_API_KEY=$OPEN_API_KEY && \
+              sudo docker-compose down && \
+              sudo docker-compose -f ~/docker-compose.yml pull && \
+              sudo docker-compose -f ~/docker-compose.yml up -d --force-recreate"
 
-# Orchestrate jobs using workflows
-# See: https://circleci.com/docs/configuration-reference/#workflows
 workflows:
-  say-hello-workflow:
+  build-and-deploy:
     jobs:
-      - say-hello
+      - publish_to_docker:
+          context: botboulevard
+          filters:
+            branches:
+              only:
+                - master
+      # - s3_copy_job:
+      #     context: botboulevard
+      #     filters:
+      #       branches:
+      #         only:
+      #           - master
+      #     requires:
+      #       - publish_to_docker
+      - deploy:
+          context: botboulevard
+          filters:
+            branches:
+              only:
+                - master
+          requires:
+            - publish_to_docker
