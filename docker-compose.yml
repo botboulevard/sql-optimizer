@@ -1,0 +1,31 @@
+version: '3'
+services:
+  llm_api:
+    image: vishals9711/llm_tools_backend:latest
+    volumes:
+      - /home/ubuntu/llm_data/logs:/app/logs
+      - /home/ubuntu/llm_data/tmp_folder:/app/tmp_folder
+      - /home/ubuntu/llm_data/index_folder:/app/index_folder
+    ports:
+      - "5001:5000"
+    environment:
+      - OPENAI_API_KEY=#OPENAI_PLACEHOLDER
+      - PORT=5000
+  client:
+    image: vishals9711/llm_tools_frontend:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - API_SERVER_PORT=http://llm_api:5000
+  landingzone:
+    image: vishals9711/llm_tools_landingzone:latest
+    ports:
+      - "8080:4321"
+  sqloptimizer:
+    image: vishals9711/llm_tools_sqloptimizer:latest
+    ports:
+      - "5002:4001"
+    environment:
+      - PORT=4001
+      - API_SERVER_PORT=http://llm_api:5000
