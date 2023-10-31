@@ -8,7 +8,7 @@ orbs:
 executors:
   docker-publisher:
     environment:
-      IMAGE_NAME: vishals9711/llm_tools_frontend
+      IMAGE_NAME: vishals9711/llm_tools_sqloptimizer
     docker:
       - image: circleci/node:latest
         auth:
